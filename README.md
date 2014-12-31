@@ -20,3 +20,11 @@ Usage of ./tcp-cl-proxy:
 When a new connection comes in and the number of active connections is already at the configured maximum the proxy simply accepts the new connection and waits until an active connection finishes. When a free active connection slot opens up one (and only one) new connection to the service is made to service one additional waiting client.
 
 Additionally the proxy provides a second listening socket on which to test livliness and gather simple stats.  This port is good for use with things like  monit, nagios, munin, etc.  It simply returns the number of active and waiting connections, and then disconnects. 
+
+### How to obtain this software
+
+If you have a working Go environment setup ([which is very easy to set up](http://golang.org/doc/install)) then simply running the following command should be sufficient to compile the binary into $GOPATH/bin
+
+```bash
+go get github.com/apokalyptik/tcp-cl-proxy
+```
