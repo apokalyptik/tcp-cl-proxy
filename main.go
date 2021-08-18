@@ -41,24 +41,33 @@ type client struct {
 	done    time.Time
 }
 
-func (c *client) copyTo(conn net.Conn) {
+func (c *client) copyTo(conn net.Conn, done chan bool) {
 	io.Copy(conn, c.conn)
 	c.w.Done()
+	done <- true
+
 }
 
-func (c *client) copyFrom(conn net.Conn) {
+func (c *client) copyFrom(conn net.Conn, done chan bool) {
 	io.Copy(c.conn, conn)
 	c.w.Done()
+	done <- true
+
 }
 
 func (c *client) copyAll() {
-	go c.copyTo(c.server)
-	go c.copyFrom(c.server)
-	// Wait for both copy operations to complete
-	c.w.Wait()
+	done := make(chan bool)
+
+	go c.copyTo(c.server, done)
+	go c.copyFrom(c.server, done)
+
+	//We wait until both ONE is done (an error or EOF can lead one of the sides to be done)
+
+	<-done
 	// Record when we finished. This way we won't report any of the post
 	// processing time that we took in the logs
 	c.done = time.Now()
+
 }
 
 func (c *client) doProxy() {
@@ -123,8 +132,10 @@ func (c *client) setup() {
 }
 
 func (c *client) teardown() {
+	log.Println("Teardown start")
 	c.conn.Close()
 	c.server.Close()
+	log.Println("Proxy connection closed")
 	// Lock our condition to avoid races when updating the active variable
 	wCond.L.Lock()
 	// Record that we're no longer active
